@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIKAQUC | ARCHIVE</title>
+    <!-- 引入 Phosphor 图标库增加趣味性 -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* --- 核心排版设置 --- */
+        :root {
+            --bg-color: #ffffff;      /* 纯白背景 */
+            --text-color: #1a1a1a;    /* 极深灰/黑 */
+            --highlight-color: #FFDE00; /* 皮卡丘亮黄 */
+            --accent-red: #FF3B30;    /* 脸颊红 */
+            --line-color: #1a1a1a;    /* 粗线条颜色 */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Impact', 'Arial Black', 'SimHei', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-weight: 900; 
+            overflow-x: hidden;
+            overflow-y: scroll; 
+            /* 自定义肉垫鼠标指针 - 黑色默认 */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256"><path fill="%231a1a1a" d="M128,144a40,40,0,1,0,40,40A40,40,0,0,0,128,144Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,208ZM72,128a32,32,0,1,0-32-32A32,32,0,0,0,72,128Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,72,80Zm112,48a32,32,0,1,0-32-32A32,32,0,0,0,184,128Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,184,80ZM128,96a32,32,0,1,0-32-32A32,32,0,0,0,128,96Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,128,48Z"></path></svg>') 12 12, auto;
+        }
+
+        /* 可点击元素的指针也替换掉 - 红色悬停 */
+        a, button, .clickable, .brand, .status {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256"><path fill="%23FF3B30" d="M128,144a40,40,0,1,0,40,40A40,40,0,0,0,128,144Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,208ZM72,128a32,32,0,1,0-32-32A32,32,0,0,0,72,128Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,72,80Zm112,48a32,32,0,1,0-32-32A32,32,0,0,0,184,128Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,184,80ZM128,96a32,32,0,1,0-32-32A32,32,0,0,0,128,96Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,128,48Z"></path></svg>') 12 12, pointer !important;
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); border-left: 2px solid var(--line-color); }
+        ::-webkit-scrollbar-thumb { background: var(--text-color); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--highlight-color); border: 2px solid var(--text-color); }
+
+        ::selection { background: var(--text-color); color: var(--highlight-color); }
+
+        /* --- 视图切换逻辑 --- */
+        .view-container { display: none; opacity: 0; transition: opacity 0.5s ease; }
+        .view-container.active { display: block; opacity: 1; }
+
+        /* --- 动画关键帧 --- */
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes powerSlideUp { from { transform: translateY(50px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes shake { 0%, 100% {transform: rotate(0deg);} 25% {transform: rotate(-5deg);} 75% {transform: rotate(5deg);} }
+
+        .reveal-on-scroll { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .reveal-on-scroll.is-visible { opacity: 1; transform: translateY(0); }
+
+        /* --- 基础组件 --- */
+        header {
+            border-bottom: 4px solid var(--line-color);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            position: sticky;
+            top: 0;
+            background: var(--bg-color);
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .brand:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: 6px 6px 0px var(--highlight-color);
+        }
+
+        .status {
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            background-color: var(--highlight-color);
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 3px solid var(--text-color);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: bold;
+            box-shadow: 4px 4px 0px var(--text-color);
+            user-select: none;
+        }
+
+        .status:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px var(--text-color);
+            background-color: var(--accent-red);
+            color: white;
+        }
+
+        .status-dot { animation: blink 1.5s step-end infinite; }
+
+        /* --- 首页特定样式 --- */
+        .hero-section {
+            padding: 80px 40px; 
+            border-bottom: 4px solid var(--line-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 40px;
+            /* 粗野风点阵背景 */
+            background-image: radial-gradient(var(--highlight-color) 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+
+        h1 {
+            font-size: 14vw; 
+            line-height: 0.9; 
+            margin: 0; 
+            text-transform: uppercase;
+            animation: powerSlideUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+            text-shadow: 4px 4px 0px var(--bg-color), 8px 8px 0px var(--text-color);
+        }
+
+        .highlight {
+            color: var(--bg-color);
+            background-color: var(--text-color);
+            padding: 0 20px; 
+            display: inline-block;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 4px solid var(--text-color);
+            text-shadow: none;
+        }
+        
+        .highlight:hover { transform: translate(-6px, -6px); box-shadow: 8px 8px 0px var(--highlight-color); z-index: 10; position: relative; }
+        
+        .highlight-yellow {
+            background-color: var(--highlight-color);
+            color: var(--text-color);
+            padding: 0 20px; 
+            display: inline-block;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 4px solid var(--text-color);
+            text-shadow: none;
+        }
+
+        .highlight-yellow:hover { transform: translate(-6px, -6px); box-shadow: 8px 8px 0px var(--text-color); z-index: 10; position: relative; }
+
+        /* 粗野风互动头像 */
+        .avatar-container {
+            width: 300px;
+            height: 300px;
+            background-color: var(--highlight-color);
+            border: 8px solid var(--text-color);
+            box-shadow: 15px 15px 0px var(--text-color);
+            border-radius: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256"><path fill="%23FF3B30" d="M128,144a40,40,0,1,0,40,40A40,40,0,0,0,128,144Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,208ZM72,128a32,32,0,1,0-32-32A32,32,0,0,0,72,128Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,72,80Zm112,48a32,32,0,1,0-32-32A32,32,0,0,0,184,128Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,184,80ZM128,96a32,32,0,1,0-32-32A32,32,0,0,0,128,96Zm0-48a16,16,0,1,1-16,16A16,16,0,0,1,128,48Z"></path></svg>') 12 12, pointer !important;
+        }
+        .avatar-container:hover {
+            transform: translate(-10px, -10px) rotate(-5deg);
+            box-shadow: 25px 25px 0px var(--text-color);
+        }
+        .avatar-container:active {
+            transform: translate(0px, 0px) scale(0.95);
+            box-shadow: 5px 5px 0px var(--text-color);
+        }
+        .click-hint {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background: var(--text-color);
+            color: var(--highlight-color);
+            padding: 5px 15px;
+            font-size: 1.2rem;
+            transform: rotate(15deg);
+            border: 3px solid var(--bg-color);
+            pointer-events: none;
+        }
+
+        /* 组合两个头像的容器 */
+        .avatars-group {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* 饲养员野烊的专属样式 */
+        .breeder-avatar {
+            background-color: #EEEEEE;
+        }
+        
+        .breeder-avatar:hover {
+            box-shadow: 25px 25px 0px var(--accent-red);
+        }
+
+        .breeder-hint {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            background: var(--text-color);
+            color: var(--bg-color);
+            padding: 5px 15px;
+            font-size: 1.2rem;
+            transform: rotate(-10deg);
+            border: 3px solid var(--text-color);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            border-bottom: 4px solid var(--line-color);
+            position: relative;
+            z-index: 5;
+        }
+
+        .info-grid.lite-mode { border-bottom: 4px solid var(--line-color); }
+        .info-grid.lite-mode .info-box {
+            border-right: 4px solid var(--line-color);
+            padding: 40px 30px; 
+            min-height: 180px; 
+        }
+        .info-grid.lite-mode .info-box:last-child { border-right: none; }
+        .info-grid.lite-mode .value { font-size: 3rem; font-weight: 900; }
+        .info-grid.lite-mode .label { 
+            font-size: 16px; 
+            color: #1a1a1a; 
+            margin-bottom: 15px; 
+            display: inline-block; 
+            background: var(--highlight-color); 
+            padding: 2px 10px; 
+            border: 2px solid var(--text-color);
+        }
+        .info-grid.lite-mode .description { 
+            font-size: 1.2rem; 
+            color: var(--text-color); 
+            font-weight: bold; 
+            font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+            line-height: 1.5;
+        }
+
+        .info-box {
+            border-right: 4px solid var(--line-color);
+            padding: 40px 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-color: var(--bg-color); 
+        }
+        
+        .info-box.clickable::after {
+            content: '↗'; position: absolute; top: 20px; right: 20px; font-size: 2rem; opacity: 0; transition: all 0.2s;
+        }
+
+        .info-box:hover {
+            background-color: var(--highlight-color);
+            transform: translate(-6px, -6px);
+            box-shadow: 8px 8px 0px var(--text-color);
+            z-index: 10;
+        }
+        .info-box:hover.clickable::after { opacity: 1; transform: translate(4px, -4px); }
+        .info-box:last-child { border-right: none; }
+
+        .marquee-container {
+            background-color: var(--text-color);
+            color: var(--highlight-color);
+            overflow: hidden;
+            border-bottom: 4px solid var(--line-color);
+            display: flex;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+        
+        .marquee-container:hover { background-color: var(--highlight-color); color: var(--text-color); }
+        .marquee-container:hover .marquee-track { animation-play-state: paused; }
+
+        .marquee-track { display: flex; width: max-content; animation: scroll 15s linear infinite; }
+        .marquee-item {
+            white-space: nowrap; font-size: 2.5rem; font-weight: 900; padding: 15px 0; margin-right: 40px; 
+            display: flex; align-items: center; gap: 15px;
+        }
+
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        .links-section { padding: 0; }
+        .link-item {
+            display: flex; align-items: center; gap: 20px;
+            border-bottom: 4px solid var(--line-color);
+            padding: 30px 40px;
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 3rem;
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-color: transparent;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+        
+        .link-item:hover {
+            background-color: var(--highlight-color);
+            transform: translate(-8px, -8px);
+            box-shadow: 12px 12px 0px var(--text-color);
+            border-bottom: 4px solid var(--text-color);
+            z-index: 10;
+        }
+
+        .link-item::after {
+            content: ''; display: block; width: 30px; height: 30px;
+            border-top: 6px solid currentColor; border-right: 6px solid currentColor;
+            position: absolute; right: 40px; top: 50%; transform: translateY(-50%) rotate(45deg); 
+            transition: transform 0.2s ease-out;
+        }
+        .link-item:hover::after { transform: translateY(-50%) rotate(45deg) scale(1.3); }
+
+        /* --- GALLERY & PAGE HEADER --- */
+        .page-header { 
+            padding: 60px 40px; 
+            border-bottom: 4px solid var(--line-color); 
+            background: repeating-linear-gradient(45deg, var(--bg-color), var(--bg-color) 10px, #f4f4f4 10px, #f4f4f4 20px); 
+        }
+        .page-title { font-size: 8vw; line-height: 0.9; text-transform: uppercase; text-shadow: 3px 3px 0px var(--highlight-color); }
+
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); border-bottom: 4px solid var(--line-color); }
+        .gallery-item {
+            border-right: 4px solid var(--line-color); border-bottom: 4px solid var(--line-color);
+            aspect-ratio: 1 / 1; position: relative; background-color: #f0f0f0; overflow: hidden; display: flex; flex-direction: column; transition: all 0.2s;
+        }
+        @media (max-width: 768px) { .gallery-item { border-right: none; } }
+        .gallery-item:hover { transform: scale(1.02); z-index: 20; box-shadow: 0px 0px 0px 8px var(--highlight-color); border-color: transparent; }
+
+        .work-preview {
+            flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;
+            font-size: 4rem; font-weight: bold; color: var(--text-color); background-size: cover; background-position: center; transition: all 0.3s;
+        }
+        .gallery-item:hover .work-preview { 
+            background-color: var(--text-color) !important; 
+            color: var(--highlight-color) !important; 
+            background-blend-mode: multiply; /* 添加混合模式，放入图片后悬停会有酷炫的暗化变色效果 */
+        }
+
+        .work-info {
+            background-color: var(--text-color); color: var(--bg-color); padding: 20px; display: flex; justify-content: space-between; align-items: center;
+            transform: translateY(100%); transition: transform 0.3s ease; border-top: 4px solid var(--line-color);
+        }
+        .gallery-item:hover .work-info { transform: translateY(0); }
+        .work-title { font-size: 1.2rem; text-transform: uppercase; font-family: 'SimHei', 'Microsoft YaHei', sans-serif; font-weight: bold;}
+        .work-tag { font-family: 'Courier New', monospace; font-size: 1rem; background: var(--highlight-color); color: var(--text-color); padding: 4px 10px; font-weight: bold; border: 2px solid var(--text-color);}
+
+        /* 返回按钮 */
+        .back-nav { padding: 20px 40px; border-bottom: 4px solid var(--line-color); background: var(--highlight-color); }
+        .back-btn { font-size: 1.5rem; text-decoration: none; color: var(--text-color); font-weight: 900; display: inline-flex; align-items: center; gap: 10px; border: 3px solid transparent;}
+        .back-btn::before { content: '←'; font-weight: bold; font-size: 2rem;}
+        .back-btn:hover { border-bottom: 3px solid var(--text-color); transform: translateX(-10px); }
+
+        /* 电火花特效 */
+        .spark {
+            position: fixed; width: 12px; height: 12px; background-color: var(--highlight-color); border: 2px solid var(--text-color); pointer-events: none; z-index: 9999; transition: all 0.3s ease-out;
+        }
+
+        /* 十万伏特过载特效 */
+        @keyframes overloadPulse {
+            0%, 100% { background-color: var(--bg-color); }
+            50% { background-color: var(--highlight-color); }
+        }
+        @keyframes electricShake {
+            0%, 100% { transform: translate(0, 0) rotate(0); filter: invert(0); }
+            25% { transform: translate(-15px, 15px) rotate(-10deg); filter: invert(0.8); }
+            50% { transform: translate(15px, -15px) rotate(10deg); filter: invert(0); }
+            75% { transform: translate(-15px, -15px) rotate(-10deg); filter: invert(0.8); }
+        }
+        body.overload-active {
+            animation: overloadPulse 0.3s infinite;
+            box-shadow: inset 0 0 50px var(--accent-red);
+        }
+        .overload-shake {
+            animation: electricShake 0.15s infinite !important;
+            box-shadow: 0 0 80px var(--accent-red) !important;
+            border-color: var(--accent-red) !important;
+        }
+
+        /* --- GALGAME 养成游戏样式 --- */
+        .galgame-container {
+            width: 100%;
+            max-width: 600px;
+            height: 550px;
+            background-color: #EEE;
+            border: 8px solid var(--text-color);
+            box-shadow: 15px 15px 0px var(--text-color);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .gal-status {
+            background: var(--text-color);
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.2rem;
+            border-bottom: 8px solid var(--text-color);
+        }
+        .gal-avatar-wrap {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: radial-gradient(#ccc 3px, transparent 3px);
+            background-size: 20px 20px;
+        }
+        .gal-dialog-box {
+            background: var(--text-color);
+            color: white;
+            min-height: 180px;
+            border-top: 8px solid var(--text-color);
+            display: flex;
+            flex-direction: column;
+        }
+        .gal-text {
+            padding: 20px;
+            font-size: 1.4rem;
+            font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+            font-weight: bold;
+            line-height: 1.5;
+            flex: 1;
+        }
+        .gal-choices {
+            display: flex;
+            border-top: 6px solid var(--text-color);
+            background: var(--bg-color);
+        }
+        .gal-btn {
+            flex: 1;
+            padding: 15px 0;
+            font-size: 1.5rem;
+            font-weight: 900;
+            font-family: 'SimHei', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: none;
+            border-right: 6px solid var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .gal-btn:last-child {
+            border-right: none;
+        }
+        .gal-btn:hover {
+            background: var(--highlight-color);
+        }
+
+        /* --- 移动端适配 --- */
+        @media (max-width: 768px) {
+            .hero-section { padding: 40px 20px; justify-content: center; text-align: center; }
+            .info-box { border-right: none; border-bottom: 4px solid var(--line-color); }
+            h1 { font-size: 16vw; }
+            .page-title { font-size: 15vw; }
+            .info-grid.lite-mode .value { font-size: 2rem; }
+            .link-item { font-size: 2rem; padding: 20px; }
+            .avatar-container { width: 200px; height: 200px; }
+            .highlight:hover, .highlight-yellow:hover, .link-item:hover, .info-box:hover { transform: translate(-3px, -3px); box-shadow: 4px 4px 0px var(--text-color); }
+            .cta-btn { font-size: 1.8rem; border-width: 4px; }
+            
+            /* Galgame 移动端适配 */
+            .gal-status { font-size: 1rem; padding: 10px; flex-wrap: wrap; justify-content: center; gap: 10px; }
+            .gal-text { font-size: 1.2rem; padding: 15px; }
+            .gal-btn { font-size: 1.2rem; padding: 10px 0; border-right: 4px solid var(--text-color); }
+            .galgame-container { height: 500px; }
+            .gal-choices { flex-wrap: wrap; }
+            .gal-btn { flex: 1 1 50%; border-bottom: 4px solid var(--text-color); }
+            .gal-btn:nth-child(even) { border-right: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="#" onclick="showView('home'); return false;" class="brand">
+            <i class="ph-fill ph-lightning" style="color: var(--highlight-color); -webkit-text-stroke: 2px var(--text-color);"></i> PIKAQUC
+        </a>
+        <div class="status" id="top-status">
+            <span class="status-dot">●</span> HP: 100% / 在线
+        </div>
+    </header>
+
+    <!-- 主页视图 -->
+    <div id="view-home" class="view-container active">
+        <div class="marquee-container">
+            <div class="marquee-track">
+                <div class="marquee-item"><i class="ph-fill ph-paw-print"></i> PIKAQUC </div>
+                <div class="marquee-item"><i class="ph-fill ph-lightning"></i> ELECTRIC FURRY </div>
+                <div class="marquee-item"><i class="ph-fill ph-paw-print"></i> WELCOME TO MY BASE </div>
+                <div class="marquee-item"><i class="ph-fill ph-lightning"></i> PIKAQUC </div>
+                <div class="marquee-item"><i class="ph-fill ph-paw-print"></i> ELECTRIC FURRY </div>
+                <div class="marquee-item"><i class="ph-fill ph-lightning"></i> WELCOME TO MY BASE </div>
+            </div>
+        </div>
+
+        <div class="hero-section">
+            <div>
+                <h1>
+                    I AM <br>
+                    <span class="highlight-yellow">PIKAQUC</span>.<br>
+                    THE <span class="highlight">FURRY</span>
+                </h1>
+            </div>
+            
+            <div class="avatars-group">
+                <!-- 粗野风互动头像：皮卡 -->
+                <div class="avatar-container" onclick="petPika(event)">
+                    <div class="click-hint">PET ME! 摸摸</div>
+                    <svg width="200" height="200" viewBox="0 0 200 200" id="pika-avatar">
+                        <!-- 粗线条耳朵 -->
+                        <polygon points="40,80 20,20 80,50" fill="var(--highlight-color)" stroke="var(--text-color)" stroke-width="8" stroke-linejoin="round"/>
+                        <polygon points="20,20 40,30 35,45" fill="var(--text-color)"/>
+                        <polygon points="160,80 180,20 120,50" fill="var(--highlight-color)" stroke="var(--text-color)" stroke-width="8" stroke-linejoin="round"/>
+                        <polygon points="180,20 160,30 165,45" fill="var(--text-color)"/>
+                        <!-- 方块脸 -->
+                        <rect x="40" y="60" width="120" height="110" rx="30" fill="var(--highlight-color)" stroke="var(--text-color)" stroke-width="8"/>
+                        <!-- 粗野风眼睛 -->
+                        <circle cx="75" cy="110" r="10" fill="var(--text-color)"/>
+                        <circle cx="125" cy="110" r="10" fill="var(--text-color)"/>
+                        <!-- 脸颊红 -->
+                        <rect x="45" y="130" width="20" height="15" fill="var(--accent-red)" stroke="var(--text-color)" stroke-width="4"/>
+                        <rect x="135" y="130" width="20" height="15" fill="var(--accent-red)" stroke="var(--text-color)" stroke-width="4"/>
+                        <!-- 猫猫嘴 -->
+                        <path d="M 85 130 Q 100 145 100 130 Q 100 145 115 130" fill="none" stroke="var(--text-color)" stroke-width="6" stroke-linecap="round"/>
+                    </svg>
+                </div>
+
+                <!-- 饲养员：野烊 -->
+                <div class="avatar-container breeder-avatar" onclick="feedPika(event)">
+                    <div class="breeder-hint">FEEDER 野烊</div>
+                    <svg width="200" height="200" viewBox="0 0 200 200" id="yeyang-avatar">
+                        <!-- 兽耳/毛发 (在帽子后面) -->
+                        <polygon points="50,80 20,20 80,60" fill="var(--bg-color)" stroke="var(--text-color)" stroke-width="8" stroke-linejoin="round"/>
+                        <polygon points="150,80 180,20 120,60" fill="var(--bg-color)" stroke="var(--text-color)" stroke-width="8" stroke-linejoin="round"/>
+                        <!-- 脸部基础 -->
+                        <rect x="50" y="80" width="100" height="90" rx="40" fill="var(--bg-color)" stroke="var(--text-color)" stroke-width="8"/>
+                        <!-- 训练家帽子主体 -->
+                        <path d="M 45 80 Q 100 20 155 80 Z" fill="var(--accent-red)" stroke="var(--text-color)" stroke-width="8" stroke-linejoin="round"/>
+                        <!-- 帽檐 -->
+                        <path d="M 35 80 Q 100 100 165 80 Z" fill="var(--accent-red)" stroke="var(--text-color)" stroke-width="8" stroke-linejoin="round"/>
+                        <!-- 眯眯眼/淡定眼神 -->
+                        <line x1="70" y1="120" x2="90" y2="120" stroke="var(--text-color)" stroke-width="8" stroke-linecap="round"/>
+                        <line x1="110" y1="120" x2="130" y2="120" stroke="var(--text-color)" stroke-width="8" stroke-linecap="round"/>
+                        <!-- 微笑/淡定的嘴巴 -->
+                        <path d="M 90 145 Q 100 150 110 145" fill="none" stroke="var(--text-color)" stroke-width="6" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-grid lite-mode">
+            <!-- 给这个卡片加上 clickable 类和点击进入 minigame 的事件 -->
+            <div class="info-box reveal-on-scroll clickable" onclick="showView('minigame')">
+                <div class="label">Name / 设定名</div>
+                <div class="value">皮卡<br>PIKAQUC</div>
+            </div>
+        </div>
+
+        <div class="links-section">
+            <a href="#" onclick="showView('gallery'); return false;" class="link-item reveal-on-scroll"><i class="ph-fill ph-image"></i> GALLERY / 记忆画廊</a>
+            
+            <!-- 💡 【替换链接指南】：将下面 href="YOUR_QQ_LINK_HERE" 替换为你的 QQ 链接，例如群链接或加好友链接 -->
+            <a href="https://qm.qq.com/q/C1CYxS6qHu" target="_blank" class="link-item reveal-on-scroll" style="transition-delay: 0.1s;"><i class="ph-fill ph-chat-circle-dots"></i> QQ / 企鹅捕捉</a>
+            
+            <!-- 💡 【替换链接指南】：将下面 href="YOUR_DOUYIN_LINK_HERE" 替换为你的 抖音 个人主页链接 -->
+            <a href="https://v.douyin.com/GYcMMuxgHfA/ 2@7.com :7pm" target="_blank" class="link-item reveal-on-scroll" style="transition-delay: 0.2s;"><i class="ph-fill ph-tiktok-logo"></i> DOUYIN / 抖音主页</a>
+            
+            <!-- 💡 【替换链接指南】：将下面 href="YOUR_BILIBILI_LINK_HERE" 替换为你的 B站 个人主页链接 -->
+            <a href="https://b23.tv/H9W19xO" target="_blank" class="link-item reveal-on-scroll" style="transition-delay: 0.3s;"><i class="ph-fill ph-television-simple"></i> BILIBILI / B站动态</a>
+        </div>
+    </div>
+
+    <!-- 作品集视图 -->
+    <div id="view-gallery" class="view-container">
+        <div class="back-nav">
+            <a href="#" onclick="showView('home'); return false;" class="back-btn">BACK TO BASE / 返回基地</a>
+        </div>
+
+        <div class="page-header">
+            <div class="page-title">
+                FLUFFY<br>
+                <span class="highlight-yellow">GALLERY</span> / 记忆相册.
+            </div>
+        </div>
+
+        <div class="gallery-grid">
+            <!-- 画廊项目 1 -->
+            <div class="gallery-item">
+                <!-- 💡 【替换图片指南】 -->
+                <!-- 1. 在下面 style 的 url('') 中填入你的图片链接，比如 url('img/my-art.jpg') -->
+                <!-- 2. 如果放入图片后觉得文字和图标挡住了画面，直接把下面的 <i> 和 <span> 两行删掉即可 -->
+                <div class="work-preview" style="background-color: var(--highlight-color); background-image: url('');">
+                    <i class="ph-fill ph-paw-print" style="font-size: 6rem;"></i>
+                    <span style="font-size: 2rem; margin-top: 10px; text-align: center;">FURSUIT<br>毛毛日常</span>
+                </div>
+                <div class="work-info">
+                    <span class="work-title">Fursuit Daily 01 / 毛毛日常 01</span>
+                    <span class="work-tag">FURSUIT</span>
+                </div>
+            </div>
+            
+            <!-- 画廊项目 2 -->
+            <div class="gallery-item">
+                <div class="work-preview" style="background-color: #EEE; background-image: url('');">
+                    <i class="ph-fill ph-paw-print" style="font-size: 6rem;"></i>
+                    <span style="font-size: 2rem; margin-top: 10px; text-align: center;">FURSUIT<br>毛毛日常</span>
+                </div>
+                <div class="work-info">
+                    <span class="work-title">Weekend Walk / 周末展会游场</span>
+                    <span class="work-tag">FURSUIT</span>
+                </div>
+            </div>
+
+            <!-- 画廊项目 3 -->
+            <div class="gallery-item">
+                <div class="work-preview" style="background-color: var(--accent-red); color: white; background-image: url('');">
+                    <i class="ph-fill ph-paw-print" style="font-size: 6rem;"></i>
+                    <span style="font-size: 2rem; margin-top: 10px; text-align: center;">FURSUIT<br>毛毛日常</span>
+                </div>
+                <div class="work-info">
+                    <span class="work-title">Fursuit Daily 03 / 毛毛日常 03</span>
+                    <span class="work-tag">FURSUIT</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 小游戏视图 (替换为Galgame) -->
+    <div id="view-minigame" class="view-container">
+        <div class="back-nav">
+            <a href="#" onclick="showView('home'); return false;" class="back-btn">BACK TO BASE / 返回基地</a>
+        </div>
+
+        <div class="page-header">
+            <div class="page-title">
+                GALGAME<br>
+                <span class="highlight-yellow">PIKA</span> / 皮卡养成大作战.
+            </div>
+            <div class="description" style="max-width: 800px; margin-top: 20px; font-size: 1.5rem; font-family: 'SimHei', 'Microsoft YaHei', sans-serif; font-weight: bold;">
+                欢迎来到饲养员模拟器！通过不同的互动来照顾这只毛茸茸的电气兽吧！
+            </div>
+        </div>
+        
+        <div style="padding: 40px 20px; display: flex; justify-content: center;">
+            <div class="galgame-container">
+                <!-- 状态栏 -->
+                <div class="gal-status">
+                    <div>MOOD: <span id="gal-mood" style="color:var(--highlight-color)">50</span>%</div>
+                    <div>HUNGER: <span id="gal-hunger" style="color:var(--highlight-color)">50</span>%</div>
+                    <div>ENERGY: <span id="gal-energy" style="color:var(--highlight-color)">80</span>%</div>
+                </div>
+                
+                <!-- 角色展示区 -->
+                <div class="gal-avatar-wrap">
+                    <svg width="250" height="250" viewBox="0 0 200 200" id="gal-avatar-svg">
+                        <!-- 粗线条耳朵 -->
+                        <polygon points="40,80 20,20 80,50" fill="var(--highlight-color)" stroke="var(--text-color)" stroke-width="8" stroke-linejoin="round"/>
+                        <polygon points="20,20 40,30 35,45" fill="var(--text-color)"/>
+                        <polygon points="160,80 180,20 120,50" fill="var(--highlight-color)" stroke="var(--text-color)" stroke-width="8" stroke-linejoin="round"/>
+                        <polygon points="180,20 160,30 165,45" fill="var(--text-color)"/>
+                        <!-- 方块脸 -->
+                        <rect x="40" y="60" width="120" height="110" rx="30" fill="var(--highlight-color)" stroke="var(--text-color)" stroke-width="8"/>
+                        <!-- 粗野风眼睛 -->
+                        <circle cx="75" cy="110" r="10" fill="var(--text-color)"/>
+                        <circle cx="125" cy="110" r="10" fill="var(--text-color)"/>
+                        <!-- 脸颊红 -->
+                        <rect x="45" y="130" width="20" height="15" fill="var(--accent-red)" stroke="var(--text-color)" stroke-width="4"/>
+                        <rect x="135" y="130" width="20" height="15" fill="var(--accent-red)" stroke="var(--text-color)" stroke-width="4"/>
+                        <!-- 猫猫嘴 -->
+                        <path d="M 85 130 Q 100 145 100 130 Q 100 145 115 130" fill="none" stroke="var(--text-color)" stroke-width="6" stroke-linecap="round"/>
+                    </svg>
+                </div>
+
+                <!-- 对话与选项区 -->
+                <div class="gal-dialog-box">
+                    <div id="gal-dialog" class="gal-text">野烊把你带到了皮卡的面前。<br>皮卡正满怀期待地看着你。要怎么做呢？</div>
+                    
+                    <div class="gal-choices">
+                        <button class="gal-btn" onclick="galAction('feed')">🍖 喂食</button>
+                        <button class="gal-btn" onclick="galAction('play')">🧶 玩耍</button>
+                        <button class="gal-btn" onclick="galAction('pet')">✋ 摸摸</button>
+                        <button class="gal-btn" onclick="galAction('sleep')">💤 睡觉</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="reveal-on-scroll" style="padding: 40px; font-family: 'Courier New', monospace; font-size: 1rem; transition-delay: 0.4s; font-weight: bold; border-top: 4px solid var(--line-color); background: var(--text-color); color: var(--bg-color);">
+        <i class="ph-fill ph-lightning" style="color: var(--highlight-color);"></i> © 2024 PIKAQUC. ALL RIGHTS RESERVED. <br>BRUTALIST FURRY ARCHIVE / 粗野主义兽人档案。
+    </footer>
+    
+    <script>
+        // --- 视图切换逻辑 ---
+        window.showView = function(viewId) {
+            // 当切换到 minigame 时，初始化 Galgame
+            if(viewId === 'minigame') {
+                initGalgame();
+            }
+
+            document.querySelectorAll('.view-container').forEach(el => {
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    el.classList.remove('active');
+                    window.scrollTo(0, 0);
+                }, 500); 
+            });
+
+            setTimeout(() => {
+                const target = document.getElementById('view-' + viewId);
+                target.classList.add('active');
+                void target.offsetWidth; 
+                target.style.opacity = '1';
+                
+                document.querySelectorAll('.reveal-on-scroll').forEach(el => {
+                    el.classList.remove('is-visible');
+                });
+            }, 500);
+        }
+
+        // --- 滚动侦测 ---
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal-on-scroll').forEach(el => { observer.observe(el); });
+
+        // --- Furry 互动特效：撸毛、好感度、电火花 ---
+        let hp = 100;
+        let isOverloaded = false;
+        let cooldownInterval = null;
+        const avatar = document.getElementById('pika-avatar');
+        const yeyangAvatar = document.getElementById('yeyang-avatar');
+        const statusBox = document.getElementById('top-status');
+
+        function petPika(e) {
+            if (isOverloaded) return; // 过载暴走期间禁止手动抚摸
+
+            // 头像震动效果
+            avatar.style.animation = 'none';
+            void avatar.offsetWidth; // 触发重绘
+            avatar.style.animation = 'shake 0.4s ease-in-out';
+            
+            // 产生电火花
+            createSpark(e.clientX, e.clientY);
+            createSpark(e.clientX, e.clientY);
+
+            // 增加过载率 (好感度)
+            if(hp < 200) {
+                hp += 10;
+                statusBox.innerHTML = `<span class="status-dot">●</span> OVERLOAD: ${hp}% / 电力过载`;
+                if(hp >= 200) {
+                    triggerMaxVoltage(); // 触发暴走特效
+                }
+            }
+        }
+
+        // 触发十万伏特特效
+        function triggerMaxVoltage() {
+            isOverloaded = true;
+            document.body.classList.add('overload-active');
+            avatar.parentElement.classList.add('overload-shake'); // 皮卡狂抖
+            
+            statusBox.style.backgroundColor = 'var(--accent-red)';
+            statusBox.style.color = 'white';
+            statusBox.innerHTML = `<span class="status-dot">●</span> ⚡ MAX VOLTAGE! / 十万伏特! ⚡`;
+            
+            // 饲养员野烊自动开始疯狂安抚！每 0.2 秒丢一次食物
+            cooldownInterval = setInterval(autoFeed, 200); 
+        }
+
+        // 野烊自动安抚逻辑
+        function autoFeed() {
+            // 野烊跟着震动发力
+            yeyangAvatar.style.animation = 'none';
+            void yeyangAvatar.offsetWidth; 
+            yeyangAvatar.style.animation = 'shake 0.2s ease-in-out';
+
+            // 获取野烊头像的中心坐标，让爱心从他那里精准飞向皮卡
+            const rect = yeyangAvatar.getBoundingClientRect();
+            const startX = rect.left + rect.width / 2;
+            const startY = rect.top + rect.height / 2;
+            
+            createFood(startX, startY, true); // true 代表是自动发射，修改飞行轨迹
+
+            // 降低过载率
+            hp -= 5; // 每次安抚降低5点
+            if(hp <= 100) {
+                stopOverload(); // 降温完成
+            } else {
+                statusBox.innerHTML = `<span class="status-dot">●</span> OVERLOAD: ${hp}% / 野烊疯狂安抚中...`;
+            }
+        }
+
+        // 结束过载状态
+        function stopOverload() {
+            clearInterval(cooldownInterval);
+            isOverloaded = false;
+            document.body.classList.remove('overload-active');
+            avatar.parentElement.classList.remove('overload-shake');
+            hp = 100;
+            
+            statusBox.style.backgroundColor = 'var(--highlight-color)';
+            statusBox.style.color = 'var(--text-color)';
+            statusBox.innerHTML = `<span class="status-dot">●</span> HP: 100% / 降温完成！`;
+            
+            // 恢复在线文本
+            setTimeout(() => {
+                if (!isOverloaded && hp === 100) {
+                    statusBox.innerHTML = `<span class="status-dot">●</span> HP: 100% / 在线`;
+                }
+            }, 2000);
+        }
+
+        function createSpark(x, y) {
+            const spark = document.createElement('div');
+            spark.className = 'spark';
+            spark.style.left = x + 'px';
+            spark.style.top = y + 'px';
+            document.body.appendChild(spark);
+
+            const moveX = (Math.random() - 0.5) * 100;
+            const moveY = (Math.random() - 0.5) * 100;
+
+            setTimeout(() => {
+                spark.style.transform = `translate(${moveX}px, ${moveY}px) scale(0) rotate(${Math.random()*360}deg)`;
+                spark.style.opacity = '0';
+            }, 10);
+
+            setTimeout(() => { spark.remove(); }, 300);
+        }
+
+        function feedPika(e) {
+            if (isOverloaded) return; // 过载期间已经由野烊自动接管，手动喂食失效
+
+            // 野烊头像互动动画
+            const yeyangAvatar = document.getElementById('yeyang-avatar');
+            yeyangAvatar.style.animation = 'none';
+            void yeyangAvatar.offsetWidth; 
+            yeyangAvatar.style.animation = 'shake 0.4s ease-in-out';
+            
+            // 产生爱心/食物投喂特效
+            createFood(e.clientX, e.clientY);
+            createFood(e.clientX, e.clientY);
+
+            // 饲养员安抚，降低过载，稳定状态
+            if(hp > 100) {
+                hp = Math.max(100, hp - 20); 
+                if(hp <= 100) {
+                    statusBox.style.backgroundColor = 'var(--highlight-color)';
+                    statusBox.style.color = 'var(--text-color)';
+                    statusBox.innerHTML = `<span class="status-dot">●</span> HP: 100% / 在线`;
+                } else {
+                    statusBox.innerHTML = `<span class="status-dot">●</span> OVERLOAD: ${hp}% / 降温中...`;
+                }
+            } else {
+                statusBox.innerHTML = `<span class="status-dot">●</span> HP: 100% / 投喂中 ❤️`;
+                setTimeout(() => {
+                    if(hp <= 100 && !isOverloaded) {
+                        statusBox.innerHTML = `<span class="status-dot">●</span> HP: 100% / 在线`;
+                    }
+                }, 2000);
+            }
+        }
+
+        function createFood(x, y, isAuto = false) {
+            const food = document.createElement('div');
+            food.className = 'spark';
+            food.style.backgroundColor = 'var(--accent-red)';
+            food.style.borderRadius = '50%'; // 圆形爱心/果子
+            food.style.left = x + 'px';
+            food.style.top = y + 'px';
+            document.body.appendChild(food);
+
+            // 如果是暴走自动安抚，食物强制向左飞（朝向皮卡的方向），否则随鼠标向上飞
+            const moveX = isAuto ? (Math.random() * -150 - 150) : (Math.random() - 0.5) * 80;
+            const moveY = isAuto ? (Math.random() * 100 - 50) : -Math.random() * 80 - 20;
+
+            // 💡 这里控制大小：暴走模式自动投喂放大 4 倍，普通点击投喂放大 2 倍
+            const targetScale = isAuto ? 4 : 2;
+
+            setTimeout(() => {
+                food.style.transform = `translate(${moveX}px, ${moveY}px) scale(${targetScale})`;
+                food.style.opacity = '0';
+            }, 10);
+
+            setTimeout(() => { food.remove(); }, 400);
+        }
+
+        // 鼠标移动偶尔掉落火花
+        document.addEventListener('mousemove', function(e) {
+            // 降低火花触发概率，避免影响性能
+            if(Math.random() > 0.05) return; 
+            createSpark(e.clientX, e.clientY);
+        });
+
+        // --- 迷你游戏：Galgame 养成逻辑 (新增) ---
+        let pikaState = { mood: 50, hunger: 50, energy: 80 };
+
+        function updateGalgameUI(text) {
+            document.getElementById('gal-dialog').innerHTML = text;
+            document.getElementById('gal-mood').innerText = pikaState.mood;
+            document.getElementById('gal-hunger').innerText = pikaState.hunger;
+            document.getElementById('gal-energy').innerText = pikaState.energy;
+            
+            // 每次操作让头像震动一下增加互动感
+            const avatar = document.getElementById('gal-avatar-svg');
+            avatar.style.animation = 'none';
+            void avatar.offsetWidth; 
+            avatar.style.animation = 'shake 0.3s ease-in-out';
+        }
+
+        function galAction(type) {
+            let response = "";
+            if(type === 'feed') {
+                if(pikaState.hunger >= 100) {
+                    response = "皮卡摸了摸滚圆的肚子，摇了摇头。它已经吃不下啦！";
+                } else {
+                    pikaState.hunger = Math.min(100, pikaState.hunger + 30);
+                    pikaState.mood = Math.min(100, pikaState.mood + 10);
+                    pikaState.energy = Math.min(100, pikaState.energy + 5);
+                    response = "你喂了皮卡一块野烊特制的红色小甜饼！皮卡开心地冒出了微弱的电火花。⚡";
+                }
+            } else if(type === 'play') {
+                if(pikaState.energy <= 20) {
+                    response = "皮卡太累了，趴在地上变成了一张黄色的毛毯，不想动弹...";
+                } else if(pikaState.hunger <= 20) {
+                    response = "皮卡饿得肚子咕咕叫，连耳朵都垂了下来，没力气玩耍了。";
+                } else {
+                    pikaState.mood = Math.min(100, pikaState.mood + 30);
+                    pikaState.energy = Math.max(0, pikaState.energy - 30);
+                    pikaState.hunger = Math.max(0, pikaState.hunger - 20);
+                    response = "你拿出了逗猫棒！皮卡像闪电一样兴奋地扑了上去，玩得非常开心！🐾";
+                }
+            } else if(type === 'pet') {
+                if(pikaState.mood >= 100) {
+                    response = "皮卡已经非常开心了！它主动蹭了蹭你的手心，发出噼里啪啦的静电。";
+                } else {
+                    pikaState.mood = Math.min(100, pikaState.mood + 15);
+                    response = "你伸手顺了顺皮卡毛茸茸的脑袋。皮卡舒服地眯起了眼睛，发出了呼噜呼噜的声音。";
+                }
+            } else if(type === 'sleep') {
+                pikaState.energy = 100;
+                pikaState.hunger = Math.max(0, pikaState.hunger - 10);
+                pikaState.mood = Math.max(0, pikaState.mood - 5);
+                response = "皮卡打了个哈欠，卷成了一个黄色的毛球，沉沉地睡去了... Zzz... (体力已完全恢复！)";
+            }
+            
+            updateGalgameUI(response);
+        }
+
+        // 每次进入游戏时初始化状态
+        function initGalgame() {
+            pikaState = { mood: 50, hunger: 50, energy: 80 };
+            updateGalgameUI("野烊把你带到了皮卡的面前。<br>皮卡正满怀期待地看着你。要怎么做呢？");
+        }
+    </script>
+
+</body>
+</html>
